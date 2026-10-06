@@ -102,6 +102,9 @@ public class main{
                     Position inicio = new Position(linha, coluna);
                     Node noInicial = new Node(inicio);
 
+                    int corOriginal = imagem.getPixel(linha,coluna);
+                    int novaCor = 0xFFFF0000; // Cor provisoria, alterar quando for implementada a escolha da cor pelo usuario
+
                     pilha.push(noInicial);
 
                     System.out.println("Posicao inicial adicionada na pilha.");
@@ -120,10 +123,31 @@ public class main{
 
                             continue;
                         }
-                        // A fazer:
-                        // Verificar cor original
-                        // Alterar cor
-                        // Adicionar os 4 vizinhos
+
+                        int corAtual = imagem.getPixel(linhaAtual, colunaAtual);
+
+                        if (corAtual != corOriginal) {
+                            continue;
+                        }
+
+                        imagem.setPixel(linhaAtual,colunaAtual,novaCor);
+
+                        Position cima = new Position(linhaAtual - 1,colunaAtual);
+                        Node noCima = new Node(cima);
+                        pilha.push(noCima);
+
+                        Position baixo = new Position(linhaAtual + 1,colunaAtual);
+                        Node noBaixo = new Node(baixo);
+                        pilha.push(noBaixo);
+
+                        Position esquerda = new Position(linhaAtual,colunaAtual - 1);
+                        Node noEsquerda = new Node(esquerda);
+                        pilha.push(noEsquerda);
+
+                        Position direita = new Position(linhaAtual,colunaAtual + 1);
+                        Node noDireita = new Node(direita);
+                        pilha.push(noDireita);
+                        
                     }
 
                     break;
