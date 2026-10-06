@@ -23,6 +23,13 @@ public class ImageService {
     public void setPixel(int linha, int coluna, int cor) {
         imagem.setRGB(coluna, linha, cor);
     }
+    public int getAltura() {
+        return imagem.getHeight();
+    }
+
+    public int getLargura() {
+        return imagem.getWidth();
+    }
 
     public void salvarImagem(String caminho) throws IOException {
         ImageIO.write(imagem, "png", new File(caminho));

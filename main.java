@@ -77,6 +77,8 @@ public class main{
    public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
+        ImageService imagem = new ImageService();
+
         int value = -1;
         int linha = 0;
         int coluna = 0;
@@ -118,8 +120,12 @@ public class main{
                             + colunaAtual
                         );
 
+                        if (linhaAtual < 0 || linhaAtual >= imagem.getAltura()
+                                || colunaAtual < 0 || colunaAtual >= imagem.getLargura()) {
+
+                            continue;
+                        }
                         // A fazer:
-                        // Verificar limites da imagem
                         // Verificar cor original
                         // Alterar cor
                         // Adicionar os 4 vizinhos
