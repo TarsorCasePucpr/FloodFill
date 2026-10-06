@@ -113,12 +113,7 @@ public class main{
                         int linhaAtual = atual.pos.linha;
                         int colunaAtual = atual.pos.coluna;
 
-                        System.out.println(
-                            "Processando: linha "
-                            + linhaAtual
-                            + ", coluna "
-                            + colunaAtual
-                        );
+                        System.out.println("Processando: linha "+ linhaAtual+ ", coluna "+ colunaAtual);
 
                         if (linhaAtual < 0 || linhaAtual >= imagem.getAltura()
                                 || colunaAtual < 0 || colunaAtual >= imagem.getLargura()) {
