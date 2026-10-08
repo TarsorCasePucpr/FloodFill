@@ -1,290 +1,161 @@
 import java.io.IOException;
 import java.util.Scanner;
 
-class Position {
-    int linha;
-    int coluna;
+public class Main {
 
-    public Position(int linha, int coluna) {
-        this.linha = linha;
-        this.coluna = coluna;
-    }
-}
+    private static final String PASTA_PILHA = "saida_pilha";
+    private static final String PASTA_FILA = "saida_fila";
 
-class Node {
-    Position pos;
-    Node proximo;
-
-    public Node(Position pos) {
-        this.pos = pos;
-        this.proximo = null;
-    }
-}
-
-class Stack {
-    Node topo;
-
-    public void push(Node n) {
-        n.proximo = this.topo;
-        this.topo = n;
-    }
-
-    public Node pop() {
-        if (isEmpty()) return null;
-        
-        Node copy = this.topo;
-        this.topo = this.topo.proximo; 
-        
-        return copy;
-    }
-
-    public boolean isEmpty() {
-        return this.topo == null;
-    }
-}
-
-class Queue {
-    Node start;
-    Node end;
-
-    public void enqueue(Node n) {
-        if (this.end == null) {
-            this.start = n;
-            this.end = n;
-        } else {
-            this.end.proximo = n;
-            this.end = n;
-        }
-    }
-
-    public Node dequeue() {
-        if (isEmpty()) return null;
-        
-        Node copy = this.start;
-        this.start = this.start.proximo;
-        if (this.start == null) {
-            this.end = null;
-        }
-        
-        return copy;
-    }
-
-    public boolean isEmpty() {
-        return this.start == null;
-    }
-}
-public class main{
-   public static void main(String[] args) {
+    public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-
         ImageService imagem = new ImageService();
+        FloodFill floodFill = new FloodFill(imagem);
 
-        int value = -1;
-        int linha = 0;
-        int coluna = 0;
-        int corNovaR = 255, corNovaG = 0, corNovaB = 0;
-        boolean imagemCarregada = false;
+        int linha = -1;
+        int coluna = -1;
+        int novaCor = 0xFFFF0000;
+        boolean executando = true;
 
-        while (value != 0) {
-            System.out.println("===== MENU FLOOD FILL =====");
+        while (executando) {
+            System.out.println("\n===== MENU FLOOD FILL =====");
             System.out.println("1 - Executar com pilha");
             System.out.println("2 - Executar com fila");
             System.out.println("3 - Escolher imagem");
             System.out.println("4 - Escolher coordenada de inicio");
             System.out.println("5 - Escolher nova cor");
             System.out.println("0 - Encerrar");
+            System.out.println("Imagem: " + (imagem.temImagem()
+                    ? imagem.getLargura() + "x" + imagem.getAltura() : "nenhuma")
+                    + " | Coordenada: " + (linha < 0 ? "nao definida" : "X=" + coluna + ", Y=" + linha)
+                    + " | Cor: " + formatarCor(novaCor));
             System.out.print("Opcao: ");
 
-            value = scanner.nextInt();
+            if (!scanner.hasNextLine()) {
+                break;
+            }
+            int opcao = lerInteiro(scanner.nextLine());
 
-            switch (value) {
-
+            switch (opcao) {
                 case 1:
-                    Stack pilha = new Stack();
-
-                    Position inicio = new Position(linha, coluna);
-                    Node noInicial = new Node(inicio);
-
-                    int corOriginal = imagem.getPixel(linha,coluna);
-                    int novaCor = 0xFFFF0000; // Cor provisoria, alterar quando for implementada a escolha da cor pelo usuario
-
-                    pilha.push(noInicial);
-
-                    System.out.println("Posicao inicial adicionada na pilha.");
-
-                    while (!pilha.isEmpty()) {
-
-                        Node atual = pilha.pop();
-
-                        int linhaAtual = atual.pos.linha;
-                        int colunaAtual = atual.pos.coluna;
-
-                        System.out.println("Processando: linha "+ linhaAtual+ ", coluna "+ colunaAtual);
-
-                        if (linhaAtual < 0 || linhaAtual >= imagem.getAltura()
-                                || colunaAtual < 0 || colunaAtual >= imagem.getLargura()) {
-
-                            continue;
-                        }
-
-                        int corAtual = imagem.getPixel(linhaAtual, colunaAtual);
-
-                        if (corAtual != corOriginal) {
-                            continue;
-                        }
-
-                        imagem.setPixel(linhaAtual,colunaAtual,novaCor);
-
-                        Position cima = new Position(linhaAtual - 1,colunaAtual);
-                        Node noCima = new Node(cima);
-                        pilha.push(noCima);
-
-                        Position baixo = new Position(linhaAtual + 1,colunaAtual);
-                        Node noBaixo = new Node(baixo);
-                        pilha.push(noBaixo);
-
-                        Position esquerda = new Position(linhaAtual,colunaAtual - 1);
-                        Node noEsquerda = new Node(esquerda);
-                        pilha.push(noEsquerda);
-
-                        Position direita = new Position(linhaAtual,colunaAtual + 1);
-                        Node noDireita = new Node(direita);
-                        pilha.push(noDireita);
-                        
-                    }
-
-                    break;
-
                 case 2:
-                    if (!imagemCarregada) {
+                    boolean pilha = opcao == 1;
+                    if (!imagem.temImagem()) {
                         System.out.println("Nenhuma imagem carregada. Use a opcao 3 primeiro.");
                         break;
                     }
-
-                    Queue fila = new Queue();
-
-                    Position inicioF = new Position(linha, coluna);
-                    Node noInicialF = new Node(inicioF);
-
-                    int corOriginalF = imagem.getPixel(linha, coluna);
-                    int novaCorF = (255 << 24) | (corNovaR << 16) | (corNovaG << 8) | corNovaB;
-
-                    if (corOriginalF == novaCorF) {
-                        System.out.println("A nova cor é igual à cor original. Nenhuma alteração necessária.");
+                    if (linha < 0) {
+                        System.out.println("Coordenada nao definida. Use a opcao 4 primeiro.");
                         break;
                     }
-
-                    fila.enqueue(noInicialF);
-
-                    System.out.println("Posicao inicial adicionada na fila.");
-
-                    int passoF = 1;
+                    String pasta = pilha ? PASTA_PILHA : PASTA_FILA;
                     try {
-                        imagem.salvarImagem("passo_fila_0.png");
-                    } catch (IOException e) {
-                        System.out.println("Erro ao salvar etapa inicial: " + e.getMessage());
-                    }
-
-                    while (!fila.isEmpty()) {
-
-                        Node atual = fila.dequeue();
-
-                        int linhaAtual = atual.pos.linha;
-                        int colunaAtual = atual.pos.coluna;
-
-                        System.out.println("Processando: linha " + linhaAtual + ", coluna " + colunaAtual);
-
-                        if (linhaAtual < 0 || linhaAtual >= imagem.getAltura()
-                                || colunaAtual < 0 || colunaAtual >= imagem.getLargura()) {
-
-                            continue;
+                        int pintados = pilha
+                                ? floodFill.executarComPilha(linha, coluna, novaCor, pasta)
+                                : floodFill.executarComFila(linha, coluna, novaCor, pasta);
+                        if (pintados == 0) {
+                            System.out.println("A nova cor e igual a cor original. Nenhuma alteracao necessaria.");
+                        } else {
+                            System.out.println("Concluido: " + pintados + " pixels pintados.");
+                            System.out.println("Etapas salvas em: " + pasta + "/ (passo_0001.png = imagem original)");
                         }
-
-                        int corAtual = imagem.getPixel(linhaAtual, colunaAtual);
-
-                        if (corAtual != corOriginalF) {
-                            continue;
-                        }
-
-                        imagem.setPixel(linhaAtual, colunaAtual, novaCorF);
-                        passoF++;
-                        if (passoF % 5 == 0) {
-                            try {
-                                String nomeArquivo = String.format("passo_fila_%d.png", passoF);
-                                imagem.salvarImagem(nomeArquivo);
-                            } catch (IOException e) {
-                                System.out.println("Erro ao salvar etapa: " + e.getMessage());
-                            }
-                        }
-
-                        Position cima = new Position(linhaAtual - 1, colunaAtual);
-                        Node noCima = new Node(cima);
-                        fila.enqueue(noCima);
-
-                        Position baixo = new Position(linhaAtual + 1, colunaAtual);
-                        Node noBaixo = new Node(baixo);
-                        fila.enqueue(noBaixo);
-
-                        Position esquerda = new Position(linhaAtual, colunaAtual - 1);
-                        Node noEsquerda = new Node(esquerda);
-                        fila.enqueue(noEsquerda);
-
-                        Position direita = new Position(linhaAtual, colunaAtual + 1);
-                        Node noDireita = new Node(direita);
-                        fila.enqueue(noDireita);
+                    } catch (IOException | IllegalArgumentException | IllegalStateException e) {
+                        System.out.println("Erro: " + e.getMessage());
                     }
-
-                    try {
-                        imagem.salvarImagem("saida.png");
-                        System.out.println("Imagem salva como saida.png");
-                    } catch (IOException e) {
-                        System.out.println("Erro ao salvar imagem: " + e.getMessage());
-                    }
-
                     break;
 
                 case 3:
-                    System.out.print("Caminho imagem:");
-                    scanner.nextLine();
-                    String caminho = scanner.nextLine();
-
+                    System.out.print("Caminho da imagem: ");
+                    if (!scanner.hasNextLine()) {
+                        break;
+                    }
+                    String caminho = scanner.nextLine().trim();
+                    if (caminho.length() >= 2 && caminho.startsWith("\"") && caminho.endsWith("\"")) {
+                        caminho = caminho.substring(1, caminho.length() - 1);
+                    }
+                    if (caminho.isEmpty()) {
+                        System.out.println("Caminho vazio.");
+                        break;
+                    }
                     try {
                         imagem.abrirImagem(caminho);
-                        imagemCarregada = true;
-                        System.out.println("Imagem carregada");
+                        linha = -1;
+                        coluna = -1;
+                        System.out.println("Imagem carregada: " + imagem.getLargura() + "x" + imagem.getAltura()
+                                + ". Defina a coordenada na opcao 4.");
                     } catch (IOException e) {
-                        System.out.println("Erro na imagem:" + e.getMessage());
+                        System.out.println("Erro na imagem: " + e.getMessage());
                     }
                     break;
+
                 case 4:
+                    if (!imagem.temImagem()) {
+                        System.out.println("Nenhuma imagem carregada. Use a opcao 3 primeiro.");
+                        break;
+                    }
+                    System.out.print("Digite X (coluna, 0 a " + (imagem.getLargura() - 1) + "): ");
+                    if (!scanner.hasNextLine()) {
+                        break;
+                    }
+                    int x = lerInteiro(scanner.nextLine());
+                    if (x < 0 || x >= imagem.getLargura()) {
+                        System.out.println("X invalido. Informe um numero entre 0 e " + (imagem.getLargura() - 1) + ".");
+                        break;
+                    }
+                    System.out.print("Digite Y (linha, 0 a " + (imagem.getAltura() - 1) + "): ");
+                    if (!scanner.hasNextLine()) {
+                        break;
+                    }
+                    int y = lerInteiro(scanner.nextLine());
+                    if (y < 0 || y >= imagem.getAltura()) {
+                        System.out.println("Y invalido. Informe um numero entre 0 e " + (imagem.getAltura() - 1) + ".");
+                        break;
+                    }
+                    coluna = x;
+                    linha = y;
+                    System.out.println("Coordenada escolhida: (X=" + coluna + ", Y=" + linha + ")");
+                    break;
 
-                    System.out.print("Digite a linha: ");
-                    linha = scanner.nextInt();
-
-                    System.out.print("Digite a coluna: ");
-                    coluna = scanner.nextInt();
-
-                    System.out.println( "Coordenada escolhida: ("+ linha+ ", "+ coluna+ ")");
-
+                case 5:
+                    System.out.print("Nova cor em hexadecimal (RRGGBB, ex: FF0000): ");
+                    if (!scanner.hasNextLine()) {
+                        break;
+                    }
+                    String hex = scanner.nextLine().trim();
+                    if (hex.startsWith("#")) {
+                        hex = hex.substring(1);
+                    }
+                    if (!hex.matches("[0-9a-fA-F]{6}")) {
+                        System.out.println("Cor invalida. Use 6 digitos hexadecimais, por exemplo FF0000.");
+                        break;
+                    }
+                    novaCor = 0xFF000000 | Integer.parseInt(hex, 16);
+                    System.out.println("Nova cor: " + formatarCor(novaCor));
                     break;
 
                 case 0:
-
+                    executando = false;
                     System.out.println("Encerrando programa.");
-
                     break;
 
                 default:
-
-                    System.out.println("Opcao invalida.");
-
+                    System.out.println("Opcao invalida. Digite um numero de 0 a 5.");
                     break;
             }
         }
 
         scanner.close();
-    } 
+    }
+
+    // Retorna -1 se o texto nao for um inteiro valido.
+    private static int lerInteiro(String texto) {
+        try {
+            return Integer.parseInt(texto.trim());
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    private static String formatarCor(int argb) {
+        return String.format("#%06X", argb & 0xFFFFFF);
+    }
 }
-
-
-
